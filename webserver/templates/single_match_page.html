@@ -1,0 +1,70 @@
+<html>
+  <style>
+    body{ 
+      font-size: 15pt;
+      font-family: arial;
+    }
+
+    div#banner { 
+       position: absolute; 
+       top: 0; 
+       left: 0; 
+       background-color: #3333FF; 
+       width: 50%; 
+     }
+     div#banner-content { 
+       width: 50%; 
+       height: 75px;
+       margin: 0 auto; 
+       padding: 10px;
+     }
+
+     div#banner2 { 
+       position: absolute; 
+       top: 0; 
+       left: 50%; 
+       background-color: #481A89; 
+       width: 50%; 
+     }
+     div#banner-content2 { 
+       width: 50%; 
+       height: 75px;
+       margin: 0 auto; 
+       padding: 10px;
+     }
+
+     div#main-content { 
+       padding-top: 70px;
+    }
+
+    .row {display: flex;}
+    .column {flex: 50%; padding: 10px; }
+  </style>
+
+<body>
+  <div id="banner"> <div id="banner-content"></div></div> 
+  <div id="banner2"> <div id="banner-content2"></div></div> 
+  <div id="main-content">
+    <center><h1>Date</h1></center>
+  	<div class = "row" style="margin-top: 20px;">
+  		<div class="column">
+      <center><img src="/static/assets/default_team_image2.png" alt="Default Team Image 2" style= "width:128px;height:128px;"></center>
+      <center><h2>Home Team</h2></center>
+  		</div>
+      <center><h1>vs.</h1></center>
+  		<div class="column">
+      <center><img src="/static/assets/default_team_image.png" alt="Default Team Image" style= "width:128px;height:128px;"></center>
+      <center><h2>Away Team</h2></center>
+  		</div>
+  	</div>
+    <center><input src="/static/assets/subscribe_icon.png" type="image" alt="Subscribe Icon Image" style= "width:150px;height:40.5px;"></center>
+  </div>
+  <h2 style="margin-left: 20px;">Comments</h2>
+  <h3 style="margin-left: 20px;">List of Comments here...</h3>
+  <p  style="margin-left: 20px;">Add your comment below:</p>
+  <form method="post" action="#">
+  <textarea id="txtcomment"  rows ="5" name="comment" style="margin-left: 20px; width: 97%;">Enter your comment here...</textarea>
+  </form>
+  <button type="button" style="margin-left: 20px;">Add Comment</button>
+</body>
+</html>

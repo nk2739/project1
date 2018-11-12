@@ -36,8 +36,8 @@ app = Flask(__name__, template_folder=tmpl_dir)
 # For your convenience, we already set it to the class database
 
 # Use the DB credentials you received by e-mail
-DB_USER = "YOUR_DB_USERNAME_HERE"
-DB_PASSWORD = "YOUR_DB_PASSWORD_HERE"
+DB_USER = "nk2739"
+DB_PASSWORD = "4f0akxy0"
 
 DB_SERVER = "w4111.cisxo09blonu.us-east-1.rds.amazonaws.com"
 
@@ -120,7 +120,7 @@ def index():
   #
   # example of a database query
   #
-  cursor = g.conn.execute("SELECT name FROM test")
+  cursor = g.conn.execute("SELECT name FROM coaches")
   names = []
   for result in cursor:
     names.append(result['name'])  # can also be accessed using result[0]
@@ -173,6 +173,29 @@ def index():
 def another():
   return render_template("anotherfile.html")
 
+@app.route('/user_page')
+def user_page():
+  return render_template("user_page.html")
+
+@app.route('/team_page')
+def team_page():
+  return render_template("team_page.html")
+
+@app.route('/player_page')
+def player_page():
+  return render_template("player_page.html")
+
+@app.route('/coach_page')
+def coach_page():
+  return render_template("coach_page.html")
+
+@app.route('/all_matches_page')
+def all_matches_page():
+  return render_template("all_matches_page.html")
+
+@app.route('/single_match_page')
+def single_match_page():
+  return render_template("single_match_page.html")
 
 # Example of adding new data to the database
 @app.route('/add', methods=['POST'])
