@@ -10,6 +10,7 @@
        top: 0; 
        left: 0; 
        background-color: #DDEEEE; 
+       /*background-image: url("/static/assets/all_nba_teams.png");*/
        width: 100%; 
      }
      div#banner-content { 
@@ -28,22 +29,25 @@
   </style>
 
 <body>
-  <div id="banner"> <div id="banner-content"></div></div> 
+  <div id="banner"> 
+  <input src="/static/assets/logout_button.png" type="image" alt="Logout Button Image" style= "width:120px;height:50px; position: absolute; right: 0;">
+  <div id="banner-content">
+  </div></div> 
   <div id="main-content">
   	<h2>Name</h2>
   	<h2>E-Mail</h2>
   	<center><img src="/static/assets/default_user_image.jpg" alt="Default User Image" style= "width:128px;height:128px;"></center>
   	<div class = "row" style="margin-top: 20px;">
-  		<div class="column" style="background-color: #aaa;">
-  			<h3>My Favorite Teams</h3>
+  		<div class="column" style="background-color: #aaa; ">
+  			<h3>My Favorite Teams</h3> <a href="/all_teams_page" style="float:right">(All Teams)</a>
   			<p>List here...</p>
   		</div>
-  		<div class="column" style="background-color: #bbb;">
-  			<h3>My Favorite Players</h3>
+  		<div class="column" style="background-color: #bbb; clear:both;">
+  			<h3>My Favorite Players</h3> <a href="/all_players_page" style="float:right">(All Players)</a>
   			<p>List here...</p>
   		</div>
-  		<div class="column" style="background-color: #aaa;">
-  			<h3>My Subscribed Matches</h3>
+  		<div class="column" style="background-color: #aaa; clear:both;">
+  			<h3>My Subscribed Matches</h3> <a href="/all_matches_page" style="float:right">(All Matches)</a>
   			<p>List here...</p>
   		</div>
   		<div class="column" style="background-color: #bbb;">

@@ -197,6 +197,18 @@ def all_matches_page():
 def single_match_page():
   return render_template("single_match_page.html")
 
+@app.route('/all_teams_page')
+def all_teams_page():
+  return render_template("all_teams_page.html")
+
+@app.route('/all_players_page')
+def all_players_page():
+  return render_template("all_players_page.html")
+
+@app.route('/other_user_page')
+def other_user_page():
+  return render_template("other_user_page.html")
+
 # Example of adding new data to the database
 @app.route('/add', methods=['POST'])
 def add():
