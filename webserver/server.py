@@ -18,12 +18,10 @@ Read about it online.
 import os
 from sqlalchemy import *
 from sqlalchemy.pool import NullPool
-from flask import Flask, request, render_template, g, redirect, Response
+from flask import Flask, request, render_template, g, redirect, Response, flash, session, abort, url_for, escape 
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
-
-
 
 # XXX: The Database URI should be in the format of: 
 #
@@ -102,7 +100,7 @@ def teardown_request(exception):
 # see for decorators: http://simeonfranklin.com/blog/2012/jul/1/python-decorators-in-12-steps/
 #
 @app.route('/')
-def index():
+def home():
   """
   request is a special object that Flask provides to access web request information:
 
@@ -114,17 +112,40 @@ def index():
   """
 
   # DEBUG: this is debugging code to see what request looks like
-  print request.args
+  # print request.args
+  if not session.get('logged_in'):
+    return render_template('login.html')
 
+  if 'username' in session:
+    return render_template('user_page.html')
+    # return 'Logged in as %s' % escape(session['username'])
+
+  return 'You are not logged in'
+
+@app.route('/login', methods=['GET','POST'])
+def do_admin_login():
+  if request.form['password'] == 'password' and request.form['username'] == 'admin' and request.method=='POST':
+    session['username'] = request.form['username']
+    session['logged_in'] = True
+    return render_template('user_page.html')
+  else:
+    flash('Wrong Password!')
+  return home()
+
+@app.route('/logout')
+def logout():
+  session['logged_in'] = False
+  session.pop('username', None)
+  return home()
 
   #
   # example of a database query
   #
-  cursor = g.conn.execute("SELECT name FROM coaches")
-  names = []
-  for result in cursor:
-    names.append(result['name'])  # can also be accessed using result[0]
-  cursor.close()
+  # cursor = g.conn.execute("SELECT name FROM coaches")
+  # names = []
+  # for result in cursor:
+  #   names.append(result['name'])  # can also be accessed using result[0]
+  # cursor.close()
 
   #
   # Flask uses Jinja templates, which is an extension to HTML where you can
@@ -152,14 +173,14 @@ def index():
   #     <div>{{n}}</div>
   #     {% endfor %}
   #
-  context = dict(data = names)
+  # context = dict(data = names)
 
 
   #
   # render_template looks in the templates/ folder for files.
   # for example, the below file reads template/index.html
   #
-  return render_template("index.html", **context)
+  # return render_template("index.html", **context)
 
 #
 # This is an example of a different path.  You can see it at
@@ -209,6 +230,10 @@ def all_players_page():
 def other_user_page():
   return render_template("other_user_page.html")
 
+@app.route('/index')
+def index():
+  return render_template("index.html")
+
 # Example of adding new data to the database
 @app.route('/add', methods=['POST'])
 def add():
@@ -227,7 +252,7 @@ def login():
 
 if __name__ == "__main__":
   import click
-
+  app.secret_key = os.urandom(12)
   @click.command()
   @click.option('--debug', is_flag=True)
   @click.option('--threaded', is_flag=True)
