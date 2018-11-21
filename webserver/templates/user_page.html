@@ -1,66 +1,87 @@
-<html>
-  <style>
-    body{ 
-      font-size: 15pt;
-      font-family: arial;
+{% extends 'lay_out.html' %}
+
+{% block body %}
+<style>
+    body {
+        font-size: 15pt;
+        font-family: "Chalkboard SE";
     }
 
-    div#banner { 
-       position: absolute; 
-       top: 0; 
-       left: 0; 
-       background-color: #DDEEEE; 
-       /*background-image: url("/static/assets/all_nba_teams.png");*/
-       width: 100%; 
-     }
-     div#banner-content { 
-       width: 800px; 
-       height: 75px;
-       margin: 0 auto; 
-       padding: 10px;
-     }
-
-     div#main-content { 
-       padding-top: 70px;
+    div#banner {
+        position: absolute;
+        top: 0;
+        left: 0;
+        background-color: #DDEEEE;
+        /*background-image: url("/static/assets/all_nba_teams.png");*/
+        width: 100%;
     }
 
-    .row {display: flex;}
-    .column {flex: 25%; padding: 10px; }
-  </style>
+    div#banner-content {
+        width: 800px;
+        height: 75px;
+        margin: 0 auto;
+        padding: 10px;
+    }
+
+    div#main-content {
+        padding-top: 70px;
+    }
+
+    .row {
+        display: flex;
+    }
+
+    .column {
+        flex: 25%;
+        padding: 10px;
+    }
+</style>
 
 <body>
-  <div id="banner"> 
-  <a href='/logout' method="POST">
-  <input src="/static/assets/logout_button.png" type="image" alt="Logout Button Image" style= "width:120px;height:50px; position: absolute; right: 0;"> 
-  </a>
-  </button>
-  <div id="banner-content">
-  </div></div> 
-  <div id="main-content">
-  	<h2>Name</h2>
-  	<h2>E-Mail</h2>
-  	<center><img src="/static/assets/default_user_image.jpg" alt="Default User Image" style= "width:128px;height:128px;"></center>
-  	<div class = "row" style="margin-top: 20px;">
-  		<div class="column" style="background-color: #aaa; ">
-  			<h3>My Favorite Teams</h3> <a href="/all_teams_page" style="float:right">(All Teams)</a>
-  			<p>List here...</p>
-  		</div>
-  		<div class="column" style="background-color: #bbb; clear:both;">
-  			<h3>My Favorite Players</h3> <a href="/all_players_page" style="float:right">(All Players)</a>
-  			<p>List here...</p>
-  		</div>
-  		<div class="column" style="background-color: #aaa; clear:both;">
-  			<h3>My Subscribed Matches</h3> <a href="/all_matches_page" style="float:right">(All Matches)</a>
-  			<p>List here...</p>
-  		</div>
-  		<div class="column" style="background-color: #bbb;">
-  			<h3>My Friends</h3>
-  			<p>List here...</p>
-  		</div>
-  	</div>
-  </div>
+<div id="banner">
+    <form method="POST" action="/logout">
+        <input src="/static/assets/logout_button.png" type="image" alt="Logout Button Image"
+               style="width:120px;height:50px; position: absolute; right: 0;">
+    </form>
+</div>
+
+<div id="main-content">
+    <h2>{{ username }}</h2>
+    <h2>{{ email }}</h2>
+    <center><img src="/static/assets/default_user_image.jpg" alt="Default User Image" style="width:128px;height:128px;">
+    </center>
+    <div class="row" style="margin-top: 20px;">
+        <div class="column" style="background-color: #aaa; ">
+            <h3>My Favorite Teams</h3> <a href="/all_teams_page" style="float:right">(All Teams)</a>
+            <br>
+            {% for team in teams %}
+                <p align="center"><a href="/team_page">{{ team }}</a></p>
+            {% endfor %}
+        </div>
+        <div class="column" style="background-color: #bbb; clear:both;">
+            <h3>My Favorite Players</h3> <a href="/all_players_page" style="float:right">(All Players)</a>
+            <br>
+            {% for player in players %}
+                <p align="center"><a href="/player_page">{{ player }}</a></p>
+            {% endfor %}
+        </div>
+        <div class="column" style="background-color: #aaa; clear:both;">
+            <h3>My Subscribed Matches</h3> <li href="/all_matches_page" style="float:right">(All Matches)</li>
+            <br>
+            {% for match in matches %}
+                <p align="center">{{ match[0] }} VS {{ match[1] }} on {{ match[2] }} <a href="/all_matches_page">GO!</a> </p>
+            {% endfor %}
+        </div>
+        <div class="column" style="background-color: #bbb;">
+            <h3>My Friends</h3>
+            {% for friend in friends %}
+                <P align="center"><a href="/user_page/{{ friend }}/private">{{ friend }}</a></P>
+            {% endfor %}
+        </div>
+    </div>
+</div>
 
 </body>
 
 
-</html>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends 'lay_out.html' %}
+{% block body %}
+    {% if sign_up %}
+        <div class="alert" align="center">
+            <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span>
+            <strong>Sign Up Successfully! The Page Will Be Redirect To Your Private Home Page Soon.</strong>
+        </div>
+        <meta http-equiv="refresh" content="2;url=/user_page/{{ username }}">
+    {% else %}
+        <link rel="stylesheet" href="/static/style.css" type="text/css">
+
+        <form action="/sign_up" method="post">
+            <div class="login">
+                <div class="login-screen">
+                    <div class="app-title">
+                        <h3>Welcome!</h3>
+                    </div>
+
+                    <div class="login-form">
+                        <div class="control-group">
+                            <input type="text" class="login-field" value="{{ username }}" placeholder="username"
+                                   name="username">
+                            <label class="login-field-icon fui-user" for="login-name"></label>
+                        </div>
+
+                        <div class="control-group">
+                            <input type="text" class="login-field" value="{{ email }}" placeholder="email" name="email">
+                            <label class="login-field-icon fui-lock" for="login-pass"></label>
+                        </div>
+
+                        <div class="control-group">
+                            <input type="password" class="login-field" value="{{ password }}" placeholder="password"
+                                   name="password">
+                            <label class="login-field-icon fui-lock" for="login-pass"></label>
+                        </div>
+
+                        <div class="control-group">
+                            <input type="password" class="login-field" value="{{ check_password }}"
+                                   placeholder="check password"
+                                   name="check_password">
+                            <label class="login-field-icon fui-lock" for="login-pass"></label>
+                        </div>
+
+                        <input type="submit" value="Sign Up" class="btn btn-primary btn-large btn-block">
+                        <br>
+                    </div>
+                </div>
+            </div>
+        </form>
+    {% endif %}
+
+
+{% endblock %}

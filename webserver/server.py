@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-
+# coding:utf-8
 """
 Columbia W4111 Intro to databases
 Example webserver
@@ -16,12 +16,15 @@ Read about it online.
 """
 
 import os
+import traceback
+import random
 from sqlalchemy import *
 from sqlalchemy.pool import NullPool
-from flask import Flask, request, render_template, g, redirect, Response, flash, session, abort, url_for, escape 
+from flask import Flask, request, render_template, g, redirect, Response, flash, session, abort, url_for, escape
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
+app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 
 # XXX: The Database URI should be in the format of: 
 #
@@ -39,241 +42,262 @@ DB_PASSWORD = "4f0akxy0"
 
 DB_SERVER = "w4111.cisxo09blonu.us-east-1.rds.amazonaws.com"
 
-DATABASEURI = "postgresql://"+DB_USER+":"+DB_PASSWORD+"@"+DB_SERVER+"/w4111"
+DATABASEURI = "postgresql://" + DB_USER + ":" + DB_PASSWORD + "@" + DB_SERVER + "/w4111"
 
-
-#
 # This line creates a database engine that knows how to connect to the URI above
-#
 engine = create_engine(DATABASEURI)
-
-
-# Here we create a test table and insert some values in it
-engine.execute("""DROP TABLE IF EXISTS test;""")
-engine.execute("""CREATE TABLE IF NOT EXISTS test (
-  id serial,
-  name text
-);""")
-engine.execute("""INSERT INTO test(name) VALUES ('grace hopper'), ('alan turing'), ('ada lovelace');""")
-
 
 
 @app.before_request
 def before_request():
-  """
-  This function is run at the beginning of every web request 
-  (every time you enter an address in the web browser).
-  We use it to setup a database connection that can be used throughout the request
+    """
+    This function is run at the beginning of every web request
+    (every time you enter an address in the web browser).
+    We use it to setup a database connection that can be used throughout the request
 
-  The variable g is globally accessible
-  """
-  try:
-    g.conn = engine.connect()
-  except:
-    print "uh oh, problem connecting to database"
-    import traceback; traceback.print_exc()
-    g.conn = None
+    The variable g is globally accessible
+    """
+    try:
+        g.conn = engine.connect()
+    except:
+        print "uh oh, problem connecting to database"
+        traceback.print_exc()
+        g.conn = None
+
 
 @app.teardown_request
 def teardown_request(exception):
-  """
-  At the end of the web request, this makes sure to close the database connection.
-  If you don't the database could run out of memory!
-  """
-  try:
-    g.conn.close()
-  except Exception as e:
-    pass
+    """
+    At the end of the web request, this makes sure to close the database connection.
+    If you don't the database could run out of memory!
+    """
+    try:
+        g.conn.close()
+    except Exception as e:
+        pass
 
 
-#
-# @app.route is a decorator around index() that means:
-#   run index() whenever the user tries to access the "/" path using a GET request
-#
-# If you wanted the user to go to e.g., localhost:8111/foobar/ with POST or GET then you could use
-#
-#       @app.route("/foobar/", methods=["POST", "GET"])
-#
-# PROTIP: (the trailing / in the path is important)
-# 
-# see for routing: http://flask.pocoo.org/docs/0.10/quickstart/#routing
-# see for decorators: http://simeonfranklin.com/blog/2012/jul/1/python-decorators-in-12-steps/
-#
 @app.route('/')
 def home():
-  """
-  request is a special object that Flask provides to access web request information:
+    """
+    If session has attribute "username", this means user "session['username'] has already logged in,
+    the page will be directed to user's home page, otherwise it will be directed to the login page.
+    """
+    if 'username' in session:
+        return redirect('/user_page/' + session['username'] + '/private')
+    else:
+        return render_template('login.html')
 
-  request.method:   "GET" or "POST"
-  request.form:     if the browser submitted a form, this contains the data in the form
-  request.args:     dictionary of URL arguments e.g., {a:1, b:2} for http://localhost?a=1&b=2
 
-  See its API: http://flask.pocoo.org/docs/0.10/api/#incoming-request-data
-  """
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """
+    If user submit the login form, this function will check if the (username, password) pair is in the users relation
+    """
+    if request.method == "POST":
+        username = request.form['username']
+        password = request.form['password']
+        check_login_cmd = "SELECT * FROM users WHERE name=:username AND password=:password"
+        cursor = g.conn.execute(text(check_login_cmd), username=username, password=password)
+        try:
+            cursor.next()
+            session["username"] = username
+            return redirect('/user_page/' + username + '/private')
+        except:
+            flash("Wrong Username or Password!")
+        finally:
+            cursor.close()
+    return render_template("login.html")
 
-  # DEBUG: this is debugging code to see what request looks like
-  # print request.args
-  if not session.get('logged_in'):
-    return render_template('login.html')
 
-  if 'username' in session:
-    return render_template('user_page.html')
-    # return 'Logged in as %s' % escape(session['username'])
+@app.route('/sign_up', methods=['GET', 'POST'])
+def sign_up():
+    if request.method == "GET":
+        return render_template("sign_up.html", sign_up=False)
+    else:
+        # Check if the username is valid and if the passwords in two box are consistent.
+        # If so, add it to the users table in the database.
+        username = request.form["username"]
+        username_exist_cmd = "SELECT * FROM users WHERE name=:username"
+        cursor = g.conn.execute(text(username_exist_cmd), username=username)
+        try:
+            cursor.next()
+            flash("The Username Already Exists!")
+            return render_template("sign_up.html", sign_up=False)
+        except:
+            email = request.form['email']
+            password = request.form['password']
+            check_password = request.form['check_password']
+            if not email:
+                flash("E-mail Must Not Be Null!")
+            elif not request.form["password"]:
+                flash("Password Must Not Be Null!")
+            elif not request.form["check_password"]:
+                flash("Please Check Your Password!")
+            elif request.form["password"] != request.form["check_password"]:
+                flash("Passwords Are Not Consistent!")
+            else:
+                # All the sign up information is valid.
+                # Now we will generate a uid for the new user
+                # We should also check the uniqueness, i.e. we should check that the uid is not used before.
+                while True:
+                    uid = random.randint(10000, 99999)
+                    try:
+                        uid_exist_cmd = "SELECT * FROM users WHERE uid=:uid"
+                        cursor = g.conn.execute(text(uid_exist_cmd), uid=uid)
+                        cursor.next()
+                    except:
+                        # Insert the new user into the users table
+                        add_new_user_cmd = "INSERT INTO users VALUES (:uid, :username, :email, :password)"
+                        g.conn.execute(text(add_new_user_cmd), uid=uid, username=username, email=email,
+                                       password=password)
+                        break
+                session['username'] = username
+                return render_template("sign_up.html", username=username, sign_up=True)
+            return render_template("sign_up.html", username=username, email=email, password=password,
+                                   check_password=check_password, sign_up=False)
+        finally:
+            cursor.close()
 
-  return 'You are not logged in'
 
-@app.route('/login', methods=['GET','POST'])
-def do_admin_login():
-  if request.form['password'] == 'password' and request.form['username'] == 'admin' and request.method=='POST':
-    session['username'] = request.form['username']
-    session['logged_in'] = True
-    return render_template('user_page.html')
-  else:
-    flash('Wrong Password!')
-  return home()
-
-@app.route('/logout')
+@app.route('/logout', methods=['POST'])
 def logout():
-  session['logged_in'] = False
-  session.pop('username', None)
-  return home()
-
-  #
-  # example of a database query
-  #
-  # cursor = g.conn.execute("SELECT name FROM coaches")
-  # names = []
-  # for result in cursor:
-  #   names.append(result['name'])  # can also be accessed using result[0]
-  # cursor.close()
-
-  #
-  # Flask uses Jinja templates, which is an extension to HTML where you can
-  # pass data to a template and dynamically generate HTML based on the data
-  # (you can think of it as simple PHP)
-  # documentation: https://realpython.com/blog/python/primer-on-jinja-templating/
-  #
-  # You can see an example template in templates/index.html
-  #
-  # context are the variables that are passed to the template.
-  # for example, "data" key in the context variable defined below will be 
-  # accessible as a variable in index.html:
-  #
-  #     # will print: [u'grace hopper', u'alan turing', u'ada lovelace']
-  #     <div>{{data}}</div>
-  #     
-  #     # creates a <div> tag for each element in data
-  #     # will print: 
-  #     #
-  #     #   <div>grace hopper</div>
-  #     #   <div>alan turing</div>
-  #     #   <div>ada lovelace</div>
-  #     #
-  #     {% for n in data %}
-  #     <div>{{n}}</div>
-  #     {% endfor %}
-  #
-  # context = dict(data = names)
+    session.pop('username', None)
+    return redirect('/')
 
 
-  #
-  # render_template looks in the templates/ folder for files.
-  # for example, the below file reads template/index.html
-  #
-  # return render_template("index.html", **context)
+@app.route('/user_page/<username>/<mode>')
+def user_page(username, mode):
+    if mode in 'public':
+        return render_template("user_page.html", mode=mode)
+    elif mode == 'private':
+        favorite_team_cmd = """
+        SELECT T.name
+        FROM users AS U, teams AS T, favoriteteam AS F
+        WHERE U.name = :username AND U.uid = F.uid AND F.tid = T.tid
+        LIMIT 5
+        """
+        cursor = g.conn.execute(text(favorite_team_cmd), username=username)
+        teams = [row['name'] for row in cursor]
 
-#
-# This is an example of a different path.  You can see it at
-# 
-#     localhost:8111/another
-#
-# notice that the functio name is another() rather than index()
-# the functions for each app.route needs to have different names
-#
-@app.route('/another')
-def another():
-  return render_template("anotherfile.html")
+        favorite_player_cmd = """
+        SELECT P.name
+        FROM users AS U, players AS P, favoriteplayer AS F
+        WHERE U.name = :username AND U.uid = F.uid AND F.pid = P.pid
+        LIMIT 5
+        """
+        cursor = g.conn.execute(text(favorite_player_cmd), username=username)
+        players = [row['name'] for row in cursor]
 
-@app.route('/user_page')
-def user_page():
-  return render_template("user_page.html")
+        subscribe_cmd = """
+        SELECT T1.name, T2.name, S.date
+        FROM users AS U, subscribematch AS S, teams AS T1, teams AS T2
+        WHERE U.name = :username AND T1.tid = S.home_tid AND T2.tid = S.away_tid AND S.uid = U.uid
+        """
+        cursor = g.conn.execute(text(subscribe_cmd), username=username)
+        matches = [row for row in cursor]
+
+        friend_cmd = """
+        SELECT U2.name
+        FROM users AS U1, users AS U2, friends AS F
+        WHERE U1.name = :username AND U1.uid = F.uid1 AND U2.uid = F.uid2
+        UNION 
+        SELECT U1.name
+        FROM users AS U1, users AS U2, friends AS F
+        WHERE U2.name = :username AND U1.uid = F.uid1 AND U2.uid = F.uid2
+        """
+        cursor = g.conn.execute(text(friend_cmd), username=username)
+        friends = [row['name'] for row in cursor]
+
+        cursor.close()
+        return render_template("user_page.html", mode=mode, username=username, teams=teams, players=players,
+                               matches=matches, friends=friends)
+    else:
+        raise Exception('Mode must be either private or public!')
+
 
 @app.route('/team_page')
 def team_page():
-  return render_template("team_page.html")
+    return render_template("team_page.html")
+
 
 @app.route('/player_page')
 def player_page():
-  return render_template("player_page.html")
+    return render_template("player_page.html")
+
 
 @app.route('/coach_page')
 def coach_page():
-  return render_template("coach_page.html")
+    return render_template("coach_page.html")
+
 
 @app.route('/all_matches_page')
 def all_matches_page():
-  return render_template("all_matches_page.html")
+    return render_template("all_matches_page.html")
+
 
 @app.route('/single_match_page')
 def single_match_page():
-  return render_template("single_match_page.html")
+    return render_template("single_match_page.html")
+
 
 @app.route('/all_teams_page')
 def all_teams_page():
-  return render_template("all_teams_page.html")
+    return render_template("all_teams_page.html")
+
 
 @app.route('/all_players_page')
 def all_players_page():
-  return render_template("all_players_page.html")
+    return render_template("all_players_page.html")
+
 
 @app.route('/other_user_page')
 def other_user_page():
-  return render_template("other_user_page.html")
+    return render_template("other_user_page.html")
+
 
 @app.route('/index')
 def index():
-  return render_template("index.html")
+    return render_template("index.html")
+
 
 # Example of adding new data to the database
 @app.route('/add', methods=['POST'])
 def add():
-  name = request.form['name']
-  print name
-  cmd = 'INSERT INTO test(name) VALUES (:name1), (:name2)';
-  g.conn.execute(text(cmd), name1 = name, name2 = name);
-  return redirect('/')
-
-
-@app.route('/login')
-def login():
-    abort(401)
-    this_is_never_executed()
+    name = request.form['name']
+    print name
+    cmd = 'INSERT INTO test(name) VALUES (:name1), (:name2)';
+    g.conn.execute(text(cmd), name1=name, name2=name);
+    return redirect('/')
 
 
 if __name__ == "__main__":
-  import click
-  app.secret_key = os.urandom(12)
-  @click.command()
-  @click.option('--debug', is_flag=True)
-  @click.option('--threaded', is_flag=True)
-  @click.argument('HOST', default='0.0.0.0')
-  @click.argument('PORT', default=8111, type=int)
-  def run(debug, threaded, host, port):
-    """
-    This function handles command line parameters.
-    Run the server using
+    import click
 
-        python server.py
-
-    Show the help text using
-
-        python server.py --help
-
-    """
-
-    HOST, PORT = host, port
-    print "running on %s:%d" % (HOST, PORT)
-    app.run(host=HOST, port=PORT, debug=debug, threaded=threaded)
+    app.secret_key = os.urandom(12)
 
 
-  run()
+    @click.command()
+    @click.option('--debug', is_flag=True)
+    @click.option('--threaded', is_flag=True)
+    @click.argument('HOST', default='0.0.0.0')
+    @click.argument('PORT', default=8111, type=int)
+    def run(debug, threaded, host, port):
+        """
+        This function handles command line parameters.
+        Run the server using
+
+            python server.py
+
+        Show the help text using
+
+            python server.py --help
+
+        """
+
+        HOST, PORT = host, port
+        print "running on %s:%d" % (HOST, PORT)
+        app.run(host=HOST, port=PORT, debug=True, threaded=threaded)
+
+
+    run()
