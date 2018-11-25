@@ -1,67 +1,64 @@
-<html>
-  <style>
-    body{ 
-      font-size: 15pt;
-      font-family: arial;
-    }
+{% extends 'error_and_home.html' %}
 
-    div#banner { 
-       position: absolute; 
-       top: 0; 
-       left: 0; 
-       background-color: #DDEEEE; 
-       width: 100%; 
-     }
-     div#banner-content { 
-       width: 800px; 
-       height: 75px;
-       margin: 0 auto; 
-       padding: 10px;
-     }
-
-     div#main-content { 
-       padding-top: 70px;
-    }
-
-    .row {display: flex;}
-    .column {flex: 33%; padding: 10px; }
-  </style>
-
-<body>
-  <div id="banner">
-  <input src="/static/assets/home_button.png" type="image" alt="Home Button Image" style= "width:50px;height:50px; position: absolute; right: 0;">
-  <div id="banner-content">
-  </div></div> 
-  <div id="main-content">
-    <div style="clear: both">
-  	   <h2 style="float: left">Team Name</h2>
-       <h2 style="float: right; padding-right: 20px">PPG</h2>
-       <h2 style="float: right; padding-right: 20px">RPG</h2>
+{% block content %}
+    <div id="banner">
+        <div id="banner-content">
+        </div>
     </div>
-    <div style="clear: both">
-      <h2 style="float: left">Location</h2>
-      <h2 style="float: right; padding-right: 20px">OPG</h2>
-      <h2 style="float: right; padding-right: 20px">APG</h2>
+
+    <form action="/team_page/{{ team_info['name'] }}" method="post">
+        <input type="submit" class="connect" style="float: left;" onclick="favor()" name="favorite"
+               value="{{ is_favorite }}">
+    </form>
+
+    <div id="main-content">
+        <div style="clear: both">
+            <h2 style="float: left">{{ team_info['name'] }}</h2>
+            <h2 style="float: right; padding-right: 20px">PPG: {{ team_info['ppg'] }}</h2>
+            <h2 style="float: right; padding-right: 20px">RPG: {{ team_info['rpg'] }}</h2>
+        </div>
+        <div style="clear: both">
+            <h2 style="float: left">{{ team_info['location'] }}</h2>
+            <h2 style="float: right; padding-right: 20px">OPPG: {{ team_info['oppg'] }}</h2>
+            <h2 style="float: right; padding-right: 20px">APG: {{ team_info['apg'] }}</h2>
+        </div>
+        <center><img src="/static/assets/teams/{{ team_info['name'] }}.png" alt="Default Team Image"
+                     style="width:128px;height:128px;"></center>
+        <input src="/static/assets/star_icon.png" type="image" alt="Favorite Team Image"
+               style="width:50px;height:50px; position: absolute; right: 0;">
+        <div class="row" style="margin-top: 20px;">
+            <div class="column" style="background-color: #aaa;">
+                <h3>Roster</h3>
+                {% for player in team_palyers %}
+                    <p align="center"><a href="/player_page/{{ player['pid'] }}">{{ player['name'] }}</a></p>
+                {% endfor %}
+            </div>
+            <div class="column" style="background-color: #bbb;">
+                <h3>Coach</h3>
+                <p align="center"><a href="/coach_page/{{ team_coach['cid'] }}">{{ team_coach['name'] }}</a></p>
+            </div>
+            <div class="column" style="background-color: #aaa;">
+                <h3>Upcoming Matches</h3>
+                {% for match in team_matches %}
+                    <p align="center">
+                        <a href="/match_page/{{ match['home_tname'] }}/{{ match['away_tname'] }}/{{ match['date'] }}">
+                            {{ match['home_tname'] }} VS {{ match['away_tname'] }} ON {{ match['date'] }}
+                        </a>
+                    </p>
+                {% endfor %}
+            </div>
+        </div>
     </div>
-  	<center><img src="/static/assets/default_team_image.png" alt="Default Team Image" style= "width:128px;height:128px;"></center>
-    <input src="/static/assets/star_icon.png" type="image" alt="Favorite Team Image" style= "width:50px;height:50px; position: absolute; right: 0;">
-  	<div class = "row" style="margin-top: 20px;">
-  		<div class="column" style="background-color: #aaa;">
-  			<h3>Roster</h3>
-  			<p>List here...</p>
-  		</div>
-  		<div class="column" style="background-color: #bbb;">
-  			<h3>Coach</h3>
-  			<p>List here...</p>
-  		</div>
-  		<div class="column" style="background-color: #aaa;">
-  			<h3>Upcoming Matches</h3>
-  			<p>List here...</p>
-  		</div>
-  	</div>
-  </div>
-
-</body>
-
-
-</html>
+    <script>
+        function favor() {
+            if (document.getElementsByName('favorite')[0].value == "favor") {
+                document.getElementsByName('favorite')[0].value = "disfavor";
+                alert('You have favored {{ team_info['name'] }}!');
+            }
+            else {
+                document.getElementsByName('favorite')[0].value = 'favor';
+                alert('You have disfavored {{ team_info['name'] }}!');
+            }
+        }
+    </script>
+{% endblock %}

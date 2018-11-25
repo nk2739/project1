@@ -1,47 +1,63 @@
-{% extends 'lay_out.html' %}
+{% extends 'flash_error.html' %}
 
 {% block body %}
     <link rel="stylesheet" href="/static/style.css" type="text/css">
-    {% if session['logged_in'] %}
-        <p>You're logged in already!</p>
-    {% else %}
 
-        <form action="/login" method="post">
-            <div class="login">
-                <div class="login-screen">
-                    <div class="app-title">
-                        <h3>Already Have an Account?</h3>
+    <form action="/login" method="post" onsubmit="return ifSubmit();">
+        <div class="login">
+            <div class="login-screen">
+                <div class="app-title">
+                    <h3>Already Have an Account?</h3>
+                </div>
+
+                <div class="login-form">
+                    <div class="control-group">
+                        <input type="text" class="login-field" value="" placeholder="username" name="username">
+                        <label class="login-field-icon fui-user" for="login-name"></label>
                     </div>
 
-                    <div class="login-form">
-                        <div class="control-group">
-                            <input type="text" class="login-field" value="" placeholder="username" name="username">
-                            <label class="login-field-icon fui-user" for="login-name"></label>
-                        </div>
-
-                        <div class="control-group">
-                            <input type="password" class="login-field" value="" placeholder="password" name="password">
-                            <label class="login-field-icon fui-lock" for="login-pass"></label>
-                        </div>
-
-                        <input type="submit" value="Log In" class="btn btn-primary btn-large btn-block">
-                        <br>
+                    <div class="control-group">
+                        <input type="password" class="login-field" value="" placeholder="password" name="password">
+                        <label class="login-field-icon fui-lock" for="login-pass"></label>
                     </div>
 
+                    <input type="submit" value="Log In" class="btn btn-primary btn-large btn-block"
+                           onclick="submitClick()">
                 </div>
             </div>
-        </form>
+        </div>
+    </form>
 
-        <form action="/sign_up" method="get">
-            <div class="login">
-                <div class="login-screen">
-                    <div class="app-title">
-                        <h3>To Be a New User!</h3>
-                    </div>
-                    <input type="submit" value="Sign Up" class="btn btn-primary btn-large btn-block">
+    <form action="/sign_up" method="get">
+        <div class="login">
+            <div class="login-screen">
+                <div class="app-title">
+                    <h3>To Be a New User!</h3>
                 </div>
+                <input type="submit" value="Sign Up" class="btn btn-primary btn-large btn-block">
             </div>
-        </form>
+        </div>
+    </form>
 
-    {% endif %}
+    <script>
+        function submitClick() {
+            var username = document.getElementsByName('username')[0].value;
+            var password = document.getElementsByName('password')[0].value;
+            if (username == "") {
+                alert("Username cannot be null!");
+            }
+            if (password == "") {
+                alert("Password cannot be null!");
+            }
+        }
+
+        function ifSubmit() {
+            var username = document.getElementsByName('username')[0].value;
+            var password = document.getElementsByName('password')[0].value;
+            if (username != "" && password != "") {
+                return true;
+            }
+            return false;
+        }
+    </script>
 {% endblock %}

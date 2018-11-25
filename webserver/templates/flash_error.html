@@ -3,13 +3,6 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        .home{
-            padding: 15px;
-            background-color: cornflowerblue;
-            color: white;
-            font-family: "Chalkboard SE";
-            font-size: large;
-        }
         .alert {
             padding: 20px;
             background-color: #f44336;
@@ -47,11 +40,6 @@
     {% endif %}
 {% endwith %}
 
-{% if username %}
-    <form action="/user_page/{{ username }}/private" method="get">
-        <input value="{{ username }}'s home" type="submit" style="float: left" class="home">
-    </form>
-{% endif %}
 
 </body>
 

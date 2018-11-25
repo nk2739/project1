@@ -1,45 +1,19 @@
-<html>
-  <style>
-    body{ 
-      font-size: 15pt;
-      font-family: arial;
-    }
+{% extends 'error_and_home.html' %}
 
-    div#banner { 
-       position: absolute; 
-       top: 0; 
-       left: 0; 
-       background-color: #DDEEEE; 
-       width: 100%; 
-     }
-     div#banner-content { 
-       width: 800px; 
-       height: 75px;
-       margin: 0 auto; 
-       padding: 10px;
-     }
+{% block content %}
+    <div id="banner">
+        <div id="banner-content">
+        </div>
+    </div>
 
-     div#main-content { 
-       padding-top: 70px;
-    }
+    <div id="main-content">
+        <h2>{{ coach_info['name'] }}</h2>
+        <h2><a href="/team_page/{{ coach_info['tname'] }}">{{ coach_info['tname'] }}</a></h2>
+        <center>
+            <img src="/static/assets/default_coach_image.png" alt="Default Coach Image"
+                 style="width:128px;height:128px;">
+        </center>
+        <h3>Previous Institution: {{ coach_info['previous_institution'] }}</h3>
+    </div>
+{% endblock %}
 
-    .row {display: flex;}
-    .column {flex: 25%; padding: 10px; }
-  </style>
-
-<body>
-  <div id="banner"> 
-  <input src="/static/assets/home_button.png" type="image" alt="Home Button Image" style= "width:50px;height:50px; position: absolute; right: 0;">
-  <div id="banner-content">
-  </div></div> 
-  <div id="main-content">
-    <h2>Coach Name</h2>
-    <h2>Team Name</h2>
-    <center><img src="/static/assets/default_coach_image.png" alt="Default Coach Image" style= "width:128px;height:128px;"></center>
-    <h3>Previous Institution</h3>
-  </div>
-
-</body>
-
-
-</html>

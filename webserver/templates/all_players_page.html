@@ -1,42 +1,62 @@
-<html>
-  <style>
-    body{ 
-      font-size: 15pt;
-      font-family: arial;
-    }
+{% extends 'error_and_home.html' %}
 
-    div#banner { 
-       position: absolute; 
-       top: 0; 
-       left: 0; 
-       /*background-color: #DDEEEE; */
-       background-image: url("/static/assets/all_nba_players.png");
-       width: 100%; 
-     }
-     div#banner-content { 
-       width: 800px; 
-       height: 75px;
-       margin: 0 auto; 
-       padding: 10px;
-     }
+{% block content %}
+    <div id="banner">
+        <div id="banner-content">
+        </div>
+    </div>
 
-     div#main-content { 
-       padding-top: 70px;
-    }
+    <form action="/all_players_page" method="post" onsubmit="return submitClick();">
+        <input type="text" name="search" style="margin-left: 20px;width: 150px;position: relative;z-index: 10"
+               placeholder="keyword">
+        <input type="submit" value="search" style="z-index: 10;position:relative;" onclick="search()">
+    </form>
 
-    .row {display: flex;}
-    .column {flex: 25%; padding: 10px; }
-  </style>
-<body>
-  <div id="banner"> 
-  <input src="/static/assets/home_button.png" type="image" alt="Home Button Image" style= "width:50px;height:50px; position: absolute; right: 0;">
-  <div id="banner-content">
-  </div></div> 
-  <div id="main-content">
-    <p></p>
-    <center><img src="/static/assets/nba_logo.png" alt="NBA Logo Image" style= "width:128px;height:70;"></center>
-    <h1>All NBA Players</h1>
-    <h3>List of all players here...</h3>
-  </div>
-</body>
-</html>
+    {% if search %}
+        <div align="center">
+            {% for player in search %}
+                <p><a href="/player_page/{{ player['pid'] }}">{{ player['name'] }}</a></p>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div id="main-content">
+            <div class="row" style="margin-top: 20px;">
+                <script>var i = 0;</script>
+                {% for field, info in top_10.items() %}
+                    <div class="column" style="background-color: #aaa; clear:both;" align="center">
+                        <h3>{{ field }} top 10 players</h3>
+                        {% for pid, name in info %}
+                            <p><a href="/player_page/{{ pid }}">{{ name }}</a></p>
+                        {% endfor %}
+                    </div>
+                    <script>
+                        if (i % 2) {
+                            document.getElementsByClassName('column')[i].style.backgroundColor = '#aaa';
+                        }
+                        else {
+                            document.getElementsByClassName('column')[i].style.backgroundColor = '#bbb';
+                        }
+                        i = i + 1;
+                    </script>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+
+
+    <script>
+        function submitClick() {
+            if (document.getElementsByName('search')[0].value == "") {
+                return false;
+            }
+            return true;
+        }
+
+        function search() {
+            if (document.getElementsByName('search')[0].value == "") {
+                alert('The keyword must not be null!')
+            }
+        }
+    </script>
+{% endblock %}

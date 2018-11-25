@@ -16,6 +16,8 @@ Read about it online.
 """
 
 import os
+from time import time
+from datetime import datetime
 import traceback
 import random
 from sqlalchemy import *
@@ -80,11 +82,11 @@ def teardown_request(exception):
 @app.route('/')
 def home():
     """
-    If session has attribute "username", this means user "session['username'] has already logged in,
+    If session has attribute "admin_user", this means user "session['admin_user'] has already logged in,
     the page will be directed to user's home page, otherwise it will be directed to the login page.
     """
-    if 'username' in session:
-        return redirect('/user_page/' + session['username'] + '/private')
+    if 'admin_user' in session:
+        return redirect('/user_page/' + session['admin_user'] + '/private')
     else:
         return render_template('login.html')
 
@@ -101,7 +103,7 @@ def login():
         cursor = g.conn.execute(text(check_login_cmd), username=username, password=password)
         try:
             cursor.next()
-            session["username"] = username
+            session["admin_user"] = username
             return redirect('/user_page/' + username + '/private')
         except:
             flash("Wrong Username or Password!")
@@ -127,148 +129,323 @@ def sign_up():
         except:
             email = request.form['email']
             password = request.form['password']
-            check_password = request.form['check_password']
-            if not email:
-                flash("E-mail Must Not Be Null!")
-            elif not request.form["password"]:
-                flash("Password Must Not Be Null!")
-            elif not request.form["check_password"]:
-                flash("Please Check Your Password!")
-            elif request.form["password"] != request.form["check_password"]:
+            confirm_password = request.form['confirmPassword']
+            if password != confirm_password:
                 flash("Passwords Are Not Consistent!")
             else:
                 # All the sign up information is valid.
                 # Now we will generate a uid for the new user
-                # We should also check the uniqueness, i.e. we should check that the uid is not used before.
-                while True:
-                    uid = random.randint(10000, 99999)
-                    try:
-                        uid_exist_cmd = "SELECT * FROM users WHERE uid=:uid"
-                        cursor = g.conn.execute(text(uid_exist_cmd), uid=uid)
-                        cursor.next()
-                    except:
-                        # Insert the new user into the users table
-                        add_new_user_cmd = "INSERT INTO users VALUES (:uid, :username, :email, :password)"
-                        g.conn.execute(text(add_new_user_cmd), uid=uid, username=username, email=email,
-                                       password=password)
-                        break
-                session['username'] = username
-                return render_template("sign_up.html", username=username, sign_up=True)
+                # We should also confirm the uniqueness, i.e. we should confirm that the uid is not used before.
+
+                add_new_user_cmd = "INSERT INTO users VALUES (:username, :email, :password)"
+                g.conn.execute(text(add_new_user_cmd), username=username, email=email, password=password)
+                session['admin_user'] = username
+                return render_template("sign_up.html", admin_user=username, sign_up=True)
             return render_template("sign_up.html", username=username, email=email, password=password,
-                                   check_password=check_password, sign_up=False)
+                                   confirm_password=confirm_password, sign_up=False)
         finally:
             cursor.close()
 
 
-@app.route('/logout', methods=['POST'])
+@app.route('/logout')
 def logout():
-    session.pop('username', None)
+    session.pop('admin_user', None)
     return redirect('/')
 
 
-@app.route('/user_page/<username>/<mode>')
-def user_page(username, mode):
-    if mode in 'public':
-        return render_template("user_page.html", mode=mode)
-    elif mode == 'private':
-        favorite_team_cmd = """
-        SELECT T.name
-        FROM users AS U, teams AS T, favoriteteam AS F
-        WHERE U.name = :username AND U.uid = F.uid AND F.tid = T.tid
-        LIMIT 5
-        """
-        cursor = g.conn.execute(text(favorite_team_cmd), username=username)
-        teams = [row['name'] for row in cursor]
+@app.route('/user_page/<user>/<mode>', methods=['GET', 'POST'])
+def user_page(user, mode):
+    """
+    This part will show the user page in two ways -- public and private.
+    The private page is for log in user.
+    The public page is for the login user to see other users.
+    :param user: string
+    :param mode: string, must be 'private' or 'public', or an exception will be raised.
+    :return:
+    """
+    if request.method == "POST":
+        if request.form['isFriend'] == "disconnect":
+            add_new_friend_cmd = "INSERT INTO friends VALUES (:admin_user, :user)"
+            g.conn.execute(text(add_new_friend_cmd), admin_user=session['admin_user'], user=user)
+        elif request.form['isFriend'] == "make friend":
+            delete_friend_cmd = """
+                DELETE FROM friends 
+                WHERE uname1 = :admin_user AND uname2 = :user OR uname1 = :user AND uname2 = :admin_user
+                """
+            g.conn.execute(text(delete_friend_cmd), admin_user=session['admin_user'], user=user)
+        else:
+            raise Exception("request.form['isFriend'] must be 'disconnect' or 'make friend'")
+
+    if mode in ['public', 'private']:
+        email_cmd = "SELECT email FROM users WHERE name = :user"
+        cursor = g.conn.execute(text(email_cmd), user=user)
+        email = cursor.next()['email']
+
+        favorite_team_cmd = "SELECT tname FROM favoriteteam WHERE uname = :user"
+        cursor = g.conn.execute(text(favorite_team_cmd), user=user)
+        teams = [row['tname'] for row in cursor]
 
         favorite_player_cmd = """
-        SELECT P.name
-        FROM users AS U, players AS P, favoriteplayer AS F
-        WHERE U.name = :username AND U.uid = F.uid AND F.pid = P.pid
-        LIMIT 5
-        """
-        cursor = g.conn.execute(text(favorite_player_cmd), username=username)
-        players = [row['name'] for row in cursor]
+            SELECT P.pid, P.name
+            FROM players AS P, favoriteplayer AS F
+            WHERE F.uname = :user AND F.pid = P.pid
+            """
+        cursor = g.conn.execute(text(favorite_player_cmd), user=user)
+        players = [row for row in cursor]
 
         subscribe_cmd = """
-        SELECT T1.name, T2.name, S.date
-        FROM users AS U, subscribematch AS S, teams AS T1, teams AS T2
-        WHERE U.name = :username AND T1.tid = S.home_tid AND T2.tid = S.away_tid AND S.uid = U.uid
-        """
-        cursor = g.conn.execute(text(subscribe_cmd), username=username)
-        matches = [row for row in cursor]
+            SELECT home_tname, away_tname, date
+            FROM subscribematch 
+            WHERE uname = :user
+            """
+        cursor = g.conn.execute(text(subscribe_cmd), user=user)
+        subscribe_matches = [row for row in cursor]
+        if mode == 'public':
+            is_friend_cmd = """
+                SELECT * 
+                FROM friends
+                WHERE uname1 = :user AND uname2 = :admin_user OR uname1 = :admin_user AND uname2 = :user
+                """
+            cursor = g.conn.execute(text(is_friend_cmd), admin_user=session['admin_user'], user=user)
+            try:
+                cursor.next()
+                is_friend = "disconnect"
+            except:
+                is_friend = "make friend"
+            cursor.close()
+            return render_template("user_page.html", mode=mode, admin_user=session['admin_user'],
+                                   user=user, email=email, teams=teams, players=players,
+                                   subscribe_matches=subscribe_matches, is_friend=is_friend)
+        else:
+            friend_cmd = """
+                SELECT uname2
+                FROM friends
+                WHERE uname1 = :user
+                UNION 
+                SELECT uname1
+                FROM friends
+                WHERE uname2 = :user
+                """
+            cursor = g.conn.execute(text(friend_cmd), user=user)
+            friends = [row[0] for row in cursor]
 
-        friend_cmd = """
-        SELECT U2.name
-        FROM users AS U1, users AS U2, friends AS F
-        WHERE U1.name = :username AND U1.uid = F.uid1 AND U2.uid = F.uid2
-        UNION 
-        SELECT U1.name
-        FROM users AS U1, users AS U2, friends AS F
-        WHERE U2.name = :username AND U1.uid = F.uid1 AND U2.uid = F.uid2
-        """
-        cursor = g.conn.execute(text(friend_cmd), username=username)
-        friends = [row['name'] for row in cursor]
+            potential_friend_cmd = """
+                SELECT uname
+                FROM favoriteplayer
+                WHERE pid IN (SELECT fp.pid FROM favoriteplayer AS fp WHERE fp.uname = :user)
+                UNION 
+                SELECT uname
+                FROM favoriteteam
+                WHERE tname IN (SELECT ft.tname FROM favoriteteam AS ft where ft.uname = :user)
+                LIMIT 5
+                """
+            cursor = g.conn.execute(text(potential_friend_cmd), user=user)
+            potential_friends = [row[0] for row in cursor]
 
-        cursor.close()
-        return render_template("user_page.html", mode=mode, username=username, teams=teams, players=players,
-                               matches=matches, friends=friends)
+            cursor.close()
+            return render_template("user_page.html", mode=mode, user=user, email=email, teams=teams, players=players,
+                                   subscribe_matches=subscribe_matches, friends=friends,
+                                   potential_friends=potential_friends)
     else:
         raise Exception('Mode must be either private or public!')
 
 
-@app.route('/team_page')
-def team_page():
-    return render_template("team_page.html")
+@app.route('/team_page/<team>', methods=["GET", "POST"])
+def team_page(team):
+    if request.method == "POST":
+        if request.form['favorite'] == "disfavor":
+            add_favorite_team_cmd = "INSERT INTO favoriteteam VALUES (:admin_user, :team)"
+            g.conn.execute(text(add_favorite_team_cmd), admin_user=session['admin_user'], team=team)
+        elif request.form['favorite'] == "favor":
+            delete_favorite_team_cmd = "DELETE FROM favoriteteam WHERE uname = :admin_user AND tname = :team"
+            g.conn.execute(text(delete_favorite_team_cmd), admin_user=session['admin_user'], team=team)
+        else:
+            raise Exception("request.form['favorite'] must be either 'disfavor' or 'favor'")
+
+    team_info_cmd = "SELECT * FROM teams WHERE name = :team"
+    cursor = g.conn.execute(text(team_info_cmd), team=team)
+    team_info = cursor.next()
+
+    is_favorite_cmd = "SELECT * FROM favoriteteam WHERE uname = :admin_user AND tname = :team"
+    cursor = g.conn.execute(text(is_favorite_cmd), admin_user=session['admin_user'], team=team)
+    try:
+        cursor.next()
+        is_favorite = "disfavor"
+    except:
+        is_favorite = "favor"
+
+    team_players_cmd = "SELECT pid, name FROM players WHERE tname = :team"
+    cursor = g.conn.execute(text(team_players_cmd), team=team)
+    team_players = [row for row in cursor]
+
+    team_coach_cmd = "SELECT cid, name FROM coaches WHERE tname = :team"
+    cursor = g.conn.execute(text(team_coach_cmd), team=team)
+    team_coach = cursor.next()
+
+    team_matches_cmd = """
+        SELECT home_tname, away_tname, date
+        FROM matches
+        WHERE home_tname = :team OR away_tname = :team
+        """
+    cursor = g.conn.execute(text(team_matches_cmd), team=team)
+    team_matches = [row for row in cursor]
+
+    cursor.close()
+    return render_template("team_page.html", admin_user=session['admin_user'], team_info=team_info,
+                           team_palyers=team_players, team_coach=team_coach, team_matches=team_matches,
+                           is_favorite=is_favorite)
 
 
-@app.route('/player_page')
-def player_page():
-    return render_template("player_page.html")
+@app.route('/player_page/<player>', methods=["GET", "POST"])
+def player_page(player):
+    if request.method == "POST":
+        if request.form['favorite'] == "disfavor":
+            add_favorite_player_cmd = "INSERT INTO favoriteplayer VALUES (:admin_user, :player)"
+            g.conn.execute(text(add_favorite_player_cmd), admin_user=session['admin_user'], player=player)
+        elif request.form['favorite'] == "favor":
+            delete_favorite_player_cmd = "DELETE FROM favoriteplayer WHERE uname = :admin_user AND pid = :player"
+            g.conn.execute(text(delete_favorite_player_cmd), admin_user=session['admin_user'], player=player)
+        else:
+            raise Exception("request.form['favorite'] must be either 'disfavor' or 'favor'")
+
+    player_info_cmd = "SELECT * FROM players WHERE pid = :player"
+    cursor = g.conn.execute(text(player_info_cmd), player=player)
+    player_info = cursor.next()
+
+    is_favorite_cmd = "SELECT * FROM favoriteplayer WHERE uname = :admin_user AND pid = :player"
+    cursor = g.conn.execute(text(is_favorite_cmd), admin_user=session['admin_user'], player=player)
+    try:
+        cursor.next()
+        is_favorite = "disfavor"
+    except:
+        is_favorite = "favor"
+    cursor.close()
+    return render_template("player_page.html", admin_user=session['admin_user'], player_info=player_info,
+                           is_favorite=is_favorite)
 
 
-@app.route('/coach_page')
-def coach_page():
-    return render_template("coach_page.html")
+@app.route('/coach_page/<coach>')
+def coach_page(coach):
+    coach_info_cmd = "SELECT * FROM coaches WHERE cid = :coach"
+    cursor = g.conn.execute(text(coach_info_cmd), coach=coach)
+    coach_info = cursor.next()
+    cursor.close()
+    return render_template("coach_page.html", admin_user=session['admin_user'], coach_info=coach_info)
 
 
-@app.route('/all_matches_page')
+@app.route('/all_matches_page', methods=["GET", "POST"])
 def all_matches_page():
-    return render_template("all_matches_page.html")
+    matches = []
+    if request.method == "POST":
+        home_team = request.form.get('home_team')
+        away_team = request.form.get('away_team')
+        select_matches_cmd = ""
+        if home_team and away_team:
+            select_matches_cmd = """
+                SELECT * 
+                FROM matches
+                WHERE home_tname = :home_team AND away_tname = :away_team
+                """
+        elif home_team and not away_team:
+            select_matches_cmd = """
+                SELECT * 
+                FROM matches
+                WHERE home_tname = :home_team
+                """
+        elif not home_team and away_team:
+            select_matches_cmd = """
+                SELECT * 
+                FROM matches
+                WHERE away_tname = :away_team
+                """
+        select_matches_cmd += "ORDER BY date DESC"
+        cursor = g.conn.execute(text(select_matches_cmd), home_team=home_team,
+                                away_team=away_team)
+        matches = [row for row in cursor]
+
+    all_teams_cmd = "SELECT name FROM teams"
+    cursor = g.conn.execute(text(all_teams_cmd))
+    teams = [row['name'] for row in cursor]
+    cursor.close()
+    return render_template("all_matches_page.html", teams=teams, matches=matches, admin_user=session['admin_user'])
 
 
-@app.route('/single_match_page')
-def single_match_page():
-    return render_template("single_match_page.html")
+@app.route('/match_page/<home_team>/<away_team>/<date>', methods=["GET", "POST"])
+def match_page(home_team, away_team, date):
+    if request.method == "POST":
+        if request.form.get('comment'):
+            timestamp = datetime.fromtimestamp(time()).strftime('%Y/%m/%d %H:%M')
+            add_comment_cmd = "INSERT INTO comments VALUES (:home_team, :away_team, :date, :timestamp, :content, :admin_user)"
+            g.conn.execute(text(add_comment_cmd), home_team=home_team, away_team=away_team, date=date,
+                           timestamp=timestamp, content=request.form['comment'], admin_user=session['admin_user'])
+
+        is_subscribed = request.form.get('subscribe')
+        if is_subscribed:
+            if is_subscribed == "subscribe":
+                delete_subscribe_match_cmd = """
+                    DELETE FROM subscribematch
+                    WHERE home_tname = :home_team AND away_tname = :away_team AND date = :date AND uname = :admin_user
+                    """
+                g.conn.execute(text(delete_subscribe_match_cmd), home_team=home_team, away_team=away_team, date=date,
+                               admin_user=session['admin_user'])
+            elif is_subscribed == "unsubscribe":
+                add_subscribe_match_cmd = "INSERT INTO subscribematch VALUES (:admin_user, :home_team, :away_team, :date)"
+                g.conn.execute(text(add_subscribe_match_cmd), home_team=home_team, away_team=away_team, date=date,
+                               admin_user=session['admin_user'])
+            else:
+                raise Exception("request.form.get('subscribe') must be either 'subscribe' or 'unsubscribe'")
+
+    is_subscribed_cmd = """
+        SELECT * FROM subscribematch 
+        WHERE home_tname = :home_team AND away_tname = :away_team AND date = :date AND uname = :admin_user
+        """
+    cursor = g.conn.execute(text(is_subscribed_cmd), admin_user=session['admin_user'], home_team=home_team,
+                            away_team=away_team, date=date)
+    try:
+        cursor.next()
+        is_subscribed = "unsubscribe"
+    except:
+        is_subscribed = "subscribe"
+
+    comments_cmd = """
+        SELECT uname, timestamp, content
+        FROM comments
+        WHERE home_tname = :home_team AND away_tname = :away_team AND date = :date
+        ORDER BY timestamp DESC 
+        """
+    cursor = g.conn.execute(text(comments_cmd), home_team=home_team, away_team=away_team, date=date)
+    comments = [row for row in cursor]
+
+    cursor.close()
+    return render_template("match_page.html", admin_user=session['admin_user'], home_team=home_team,
+                           away_team=away_team, date=date, is_subscribed=is_subscribed, comments=comments)
 
 
 @app.route('/all_teams_page')
 def all_teams_page():
-    return render_template("all_teams_page.html")
+    all_teams_cmd = "SELECT name FROM teams"
+    cursor = g.conn.execute(text(all_teams_cmd))
+    teams = [row['name'] for row in cursor]
+    cursor.close()
+    return render_template("all_teams_page.html", teams=teams, admin_user=session['admin_user'])
 
 
-@app.route('/all_players_page')
+@app.route('/all_players_page', methods=["GET", "POST"])
 def all_players_page():
-    return render_template("all_players_page.html")
+    search = []
+    if request.method == "POST":
+        search_cmd = "SELECT pid, name FROM players WHERE name LIKE '%" + request.form['search'] + "%'"
+        cursor = g.conn.execute(text(search_cmd))
+        search = [row for row in cursor]
 
+    top_10 = {}
+    for criterion in ['ppg', 'rpg', 'apg', 'bpg']:
+        top_10_cmd = "SELECT pid, name FROM players ORDER BY " + criterion + " DESC LIMIT 10"
+        cursor = g.conn.execute(text(top_10_cmd))
+        top_10[criterion] = [row for row in cursor]
 
-@app.route('/other_user_page')
-def other_user_page():
-    return render_template("other_user_page.html")
-
-
-@app.route('/index')
-def index():
-    return render_template("index.html")
-
-
-# Example of adding new data to the database
-@app.route('/add', methods=['POST'])
-def add():
-    name = request.form['name']
-    print name
-    cmd = 'INSERT INTO test(name) VALUES (:name1), (:name2)';
-    g.conn.execute(text(cmd), name1=name, name2=name);
-    return redirect('/')
+    cursor.close()
+    return render_template("all_players_page.html", admin_user=session['admin_user'], top_10=top_10, search=search)
 
 
 if __name__ == "__main__":
