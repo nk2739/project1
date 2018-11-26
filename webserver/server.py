@@ -167,14 +167,14 @@ def user_page(user, mode):
         if request.form['isFriend'] == "disconnect":
             add_new_friend_cmd = "INSERT INTO friends VALUES (:admin_user, :user)"
             g.conn.execute(text(add_new_friend_cmd), admin_user=session['admin_user'], user=user)
-        elif request.form['isFriend'] == "make friend":
+        elif request.form['isFriend'] == "add friend":
             delete_friend_cmd = """
                 DELETE FROM friends 
                 WHERE uname1 = :admin_user AND uname2 = :user OR uname1 = :user AND uname2 = :admin_user
                 """
             g.conn.execute(text(delete_friend_cmd), admin_user=session['admin_user'], user=user)
         else:
-            raise Exception("request.form['isFriend'] must be 'disconnect' or 'make friend'")
+            raise Exception("request.form['isFriend'] must be 'disconnect' or 'add friend'")
 
     if mode in ['public', 'private']:
         email_cmd = "SELECT email FROM users WHERE name = :user"
@@ -211,7 +211,7 @@ def user_page(user, mode):
                 cursor.next()
                 is_friend = "disconnect"
             except:
-                is_friend = "make friend"
+                is_friend = "add friend"
             cursor.close()
             return render_template("user_page.html", mode=mode, admin_user=session['admin_user'],
                                    user=user, email=email, teams=teams, players=players,
@@ -253,14 +253,14 @@ def user_page(user, mode):
 @app.route('/team_page/<team>', methods=["GET", "POST"])
 def team_page(team):
     if request.method == "POST":
-        if request.form['favorite'] == "disfavor":
+        if request.form['favorite'] == "un-favorite":
             add_favorite_team_cmd = "INSERT INTO favoriteteam VALUES (:admin_user, :team)"
             g.conn.execute(text(add_favorite_team_cmd), admin_user=session['admin_user'], team=team)
-        elif request.form['favorite'] == "favor":
+        elif request.form['favorite'] == "favorite":
             delete_favorite_team_cmd = "DELETE FROM favoriteteam WHERE uname = :admin_user AND tname = :team"
             g.conn.execute(text(delete_favorite_team_cmd), admin_user=session['admin_user'], team=team)
         else:
-            raise Exception("request.form['favorite'] must be either 'disfavor' or 'favor'")
+            raise Exception("request.form['favorite'] must be either 'un-favorite' or 'favorite'")
 
     team_info_cmd = "SELECT * FROM teams WHERE name = :team"
     cursor = g.conn.execute(text(team_info_cmd), team=team)
@@ -270,9 +270,9 @@ def team_page(team):
     cursor = g.conn.execute(text(is_favorite_cmd), admin_user=session['admin_user'], team=team)
     try:
         cursor.next()
-        is_favorite = "disfavor"
+        is_favorite = "un-favorite"
     except:
-        is_favorite = "favor"
+        is_favorite = "favorite"
 
     team_players_cmd = "SELECT pid, name FROM players WHERE tname = :team"
     cursor = g.conn.execute(text(team_players_cmd), team=team)
@@ -299,14 +299,14 @@ def team_page(team):
 @app.route('/player_page/<player>', methods=["GET", "POST"])
 def player_page(player):
     if request.method == "POST":
-        if request.form['favorite'] == "disfavor":
+        if request.form['favorite'] == "un-favorite":
             add_favorite_player_cmd = "INSERT INTO favoriteplayer VALUES (:admin_user, :player)"
             g.conn.execute(text(add_favorite_player_cmd), admin_user=session['admin_user'], player=player)
-        elif request.form['favorite'] == "favor":
+        elif request.form['favorite'] == "favorite":
             delete_favorite_player_cmd = "DELETE FROM favoriteplayer WHERE uname = :admin_user AND pid = :player"
             g.conn.execute(text(delete_favorite_player_cmd), admin_user=session['admin_user'], player=player)
         else:
-            raise Exception("request.form['favorite'] must be either 'disfavor' or 'favor'")
+            raise Exception("request.form['favorite'] must be either 'un-favorite' or 'favorite'")
 
     player_info_cmd = "SELECT * FROM players WHERE pid = :player"
     cursor = g.conn.execute(text(player_info_cmd), player=player)
@@ -316,9 +316,9 @@ def player_page(player):
     cursor = g.conn.execute(text(is_favorite_cmd), admin_user=session['admin_user'], player=player)
     try:
         cursor.next()
-        is_favorite = "disfavor"
+        is_favorite = "un-favorite"
     except:
-        is_favorite = "favor"
+        is_favorite = "favorite"
     cursor.close()
     return render_template("player_page.html", admin_user=session['admin_user'], player_info=player_info,
                            is_favorite=is_favorite)

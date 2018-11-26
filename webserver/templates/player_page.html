@@ -37,13 +37,13 @@
     </div>
     <script>
         function favor() {
-            if (document.getElementsByName('favorite')[0].value == "favor") {
-                document.getElementsByName('favorite')[0].value = "disfavor";
-                alert('You have favored {{ player_info['name'] }}!');
+            if (document.getElementsByName('favorite')[0].value == "favorite") {
+                document.getElementsByName('favorite')[0].value = "un-favorite";
+                alert('You have favorited {{ player_info['name'] }}!');
             }
             else {
-                document.getElementsByName('favorite')[0].value = 'favor';
-                alert('You have disfavored {{ player_info['name'] }}!');
+                document.getElementsByName('favorite')[0].value = 'favorite';
+                alert('You have un-favorited {{ player_info['name'] }}!');
             }
         }
     </script>

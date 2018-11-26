@@ -24,8 +24,6 @@
         </div>
         <center><img src="/static/assets/teams/{{ team_info['name'] }}.png" alt="Default Team Image"
                      style="width:128px;height:128px;"></center>
-        <input src="/static/assets/star_icon.png" type="image" alt="Favorite Team Image"
-               style="width:50px;height:50px; position: absolute; right: 0;">
         <div class="row" style="margin-top: 20px;">
             <div class="column" style="background-color: #aaa;">
                 <h3>Roster</h3>
@@ -51,13 +49,13 @@
     </div>
     <script>
         function favor() {
-            if (document.getElementsByName('favorite')[0].value == "favor") {
-                document.getElementsByName('favorite')[0].value = "disfavor";
-                alert('You have favored {{ team_info['name'] }}!');
+            if (document.getElementsByName('favorite')[0].value == "favorite") {
+                document.getElementsByName('favorite')[0].value = "un-favorite";
+                alert('You have favorited the {{ team_info['name'] }}!');
             }
             else {
-                document.getElementsByName('favorite')[0].value = 'favor';
-                alert('You have disfavored {{ team_info['name'] }}!');
+                document.getElementsByName('favorite')[0].value = 'favorite';
+                alert('You have un-favorited the {{ team_info['name'] }}!');
             }
         }
     </script>

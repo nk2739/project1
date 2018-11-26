@@ -30,8 +30,6 @@
                 <center><h2><a href="/team_page/{{ away_team }}">{{ away_team }}</a></h2></center>
             </div>
         </div>
-        <center><input src="/static/assets/subscribe_icon.png" type="image" alt="Subscribe Icon Image"
-                       style="width:150px;height:40.5px;"></center>
     </div>
     <h2 style="margin-left: 20px;">Comments</h2>
 
@@ -50,11 +48,11 @@
         function subscribes() {
             if (document.getElementsByName('subscribe')[0].value == "subscribe") {
                 document.getElementsByName('subscribe')[0].value = "unsubscribe"
-                alert('You have subscribed this match!')
+                alert('You have subscribed to this match!')
             }
             else {
                 document.getElementsByName('subscribe')[0].value = 'subscribe'
-                alert('You have unsubscribed this match!')
+                alert('You have unsubscribed from this match!')
             }
         }
     </script>

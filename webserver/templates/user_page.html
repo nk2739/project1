@@ -109,12 +109,12 @@
     <script>
         function makeFriend() {
             if (document.getElementsByName("isFriend")[0].value == "disconnect") {
-                document.getElementsByName("isFriend")[0].value = "make friend"
-                alert('You have disconnected with {{ user }}');
+                document.getElementsByName("isFriend")[0].value = "add friend"
+                alert('You are no longer friends with {{ user }}!');
             }
             else {
                 document.getElementsByName("isFriend")[0].value = "disconnect"
-                alert('You have make friend with {{ user }}');
+                alert('You are now friends with {{ user }}!');
             }
         }
     </script>
