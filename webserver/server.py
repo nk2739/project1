@@ -336,9 +336,9 @@ def coach_page(coach):
 @app.route('/all_matches_page', methods=["GET", "POST"])
 def all_matches_page():
     matches = []
+    home_team = request.form.get('home_team')
+    away_team = request.form.get('away_team')
     if request.method == "POST":
-        home_team = request.form.get('home_team')
-        away_team = request.form.get('away_team')
         select_matches_cmd = ""
         if home_team and away_team:
             select_matches_cmd = """
@@ -367,7 +367,8 @@ def all_matches_page():
     cursor = g.conn.execute(text(all_teams_cmd))
     teams = [row['name'] for row in cursor]
     cursor.close()
-    return render_template("all_matches_page.html", teams=teams, matches=matches, admin_user=session['admin_user'])
+    return render_template("all_matches_page.html", teams=teams, matches=matches, admin_user=session['admin_user'],
+                           home_team=home_team, away_team=away_team)
 
 
 @app.route('/match_page/<home_team>/<away_team>/<date>', methods=["GET", "POST"])

@@ -7,7 +7,7 @@
     </div>
 
     <form action="/player_page/{{ player_info['pid'] }}" method="post">
-        <input type="submit" class="connect" style="float: left;" onclick="favor()" name="favorite"
+        <input type="submit" class="connect" style="float: left;" onclick="favor(this)" name="favorite"
                value="{{ is_favorite }}">
     </form>
 
@@ -36,13 +36,13 @@
         </div>
     </div>
     <script>
-        function favor() {
-            if (document.getElementsByName('favorite')[0].value == "favorite") {
-                document.getElementsByName('favorite')[0].value = "un-favorite";
+        function favor(favorite) {
+            if (favorite.value == "favorite") {
+                favorite.value = "un-favorite";
                 alert('You have favorited {{ player_info['name'] }}!');
             }
             else {
-                document.getElementsByName('favorite')[0].value = 'favorite';
+                favorite.value = 'favorite';
                 alert('You have un-favorited {{ player_info['name'] }}!');
             }
         }

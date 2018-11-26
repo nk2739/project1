@@ -13,11 +13,11 @@
         <form action="/all_matches_page" method="post" onsubmit="return ifSubmit();">
             <div class="row" style="margin-top: 20px;">
                 <div class="column">
-                    <center><img src="/static/assets/default_team_image2.png" alt="Default Team Image 2"
-                                 style="width:128px;height:128px;"></center>
+                    <center><img src='/static/assets/default_team_image.png'
+                                 style="width:128px;height:128px;" id="home_team_img"></center>
                     <center><h2>Home Team</h2></center>
-                    <center><select name="home_team">
-                        <option disabled selected value> -- select a team --</option>
+                    <center><select name="home_team" onchange="selectHomeTeam(this)">
+                        <option selected value> -- select a team --</option>
                         {% for team in teams %}
                             <option value="{{ team }}">{{ team }}</option>
                         {% endfor %}
@@ -25,17 +25,29 @@
                 </div>
                 <center><h1>vs.</h1></center>
                 <div class="column">
-                    <center><img src="/static/assets/default_team_image.png" alt="Default Team Image"
-                                 style="width:128px;height:128px;"></center>
+                    <center><img src='/static/assets/default_team_image.png'
+                                 style="width:128px;height:128px;" id="away_team_img"></center>
                     <center><h2>Away Team</h2></center>
-                    <center><select name="away_team">
-                        <option disabled selected value> -- select a team --</option>
+                    <center><select name="away_team" onchange="selectHomeTeam(this)">
+                        <option selected value> -- select a team --</option>
                         {% for team in teams %}
                             <option value="{{ team }}">{{ team }}</option>
                         {% endfor %}
                     </select></center>
                 </div>
+                <script>
+                    var homeTeam = JSON.parse('{{ home_team | tojson | safe}}');
+                    var awayTeam = JSON.parse('{{ away_team | tojson | safe }}');
+                    if (homeTeam) {
+                        document.getElementById('home_team_img').src = "/static/assets/teams/" + homeTeam + ".png";
+                        document.getElementsByName('home_team')[0].value = homeTeam;
+                    }
+                    if (awayTeam) {
+                        document.getElementById('away_team_img').src = "/static/assets/teams/" + awayTeam + ".png";
+                        document.getElementsByName('away_team')[0].value = awayTeam;
+                    }
 
+                </script>
             </div>
             <center><input type="image" src="/static/assets/go_button.png" alt="Go Button Image"
                            style="width:150px;height:60px;" onclick="submitClick()"></center>
@@ -61,6 +73,15 @@
         function submitClick() {
             if (document.getElementsByName('home_team')[0].value == "" && document.getElementsByName('away_team')[0].value == "") {
                 alert('Please select at least one team!');
+            }
+        }
+
+        function selectHomeTeam(select) {
+            if (select.value == "") {
+                document.getElementById(select.name + '_img').src = "/static/assets/default_team_image.png";
+            }
+            else {
+                document.getElementById(select.name + '_img').src = "/static/assets/teams/" + select.value + ".png";
             }
         }
     </script>

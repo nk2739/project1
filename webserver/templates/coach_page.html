@@ -10,7 +10,7 @@
         <h2>{{ coach_info['name'] }}</h2>
         <h2><a href="/team_page/{{ coach_info['tname'] }}">{{ coach_info['tname'] }}</a></h2>
         <center>
-            <img src="/static/assets/default_coach_image.png" alt="Default Coach Image"
+            <img src="/static/assets/coaches/{{ coach_info['cid'] }}.png" alt="Default Coach Image"
                  style="width:128px;height:128px;">
         </center>
         <h3>Previous Institution: {{ coach_info['previous_institution'] }}</h3>
